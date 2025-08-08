@@ -3,89 +3,108 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>NEO Mobile • Address & Board (Offline Ready)</title>
+<title>NEO Mobile Online • Address Forge & Live Board</title>
 <meta name="color-scheme" content="dark light">
+<!-- Firebase (Compat for widest mobile support) -->
+<script defer src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app-compat.js"></script>
+<script defer src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth-compat.js"></script>
+<script defer src="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore-compat.js"></script>
 <style>
   :root{
-    --bg:#0c111b;--panel:#151b26;--muted:#7a8699;--text:#e8f0ff;--brand:#10b3d6;--brand2:#7ddc1f;--danger:#ff5a5f;
-    --radius:14px;--shadow:0 8px 26px rgba(0,0,0,.35);
+    --bg:#0c111b;--bg2:#0a0f18;--panel:#141b26;--muted:#7a8699;--text:#e8f0ff;--brand:#10b3d6;--brand2:#7ddc1f;--danger:#ff5a5f;
+    --ok:#23d18b;--warn:#f1c40f;--radius:16px;--shadow:0 10px 28px rgba(0,0,0,.35);
   }
   html,body{height:100%}
   body{
     margin:0;background:
-      radial-gradient(700px 400px at 110% -10%, rgba(16,179,214,.18), transparent 60%),
-      radial-gradient(700px 400px at -10% 110%, rgba(125,220,31,.15), transparent 60%),
-      linear-gradient(180deg,#0c111b 0%, #0a0f18 100%);
-    color:var(--text); font:16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans Thai", "Noto Sans", sans-serif;
+      radial-gradient(700px 380px at 110% -10%, rgba(16,179,214,.18), transparent 60%),
+      radial-gradient(700px 380px at -10% 110%, rgba(125,220,31,.15), transparent 60%),
+      linear-gradient(180deg,var(--bg) 0%, var(--bg2) 100%);
+    color:var(--text);
+    font:16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans Thai", "Noto Sans", sans-serif;
     -webkit-tap-highlight-color: transparent;
   }
-  .container{max-width:680px;margin:0 auto;padding:16px 14px 84px}
-  .topbar{position:sticky;top:0;z-index:10;background:linear-gradient(180deg, rgba(12,17,27,.9), rgba(12,17,27,.75));backdrop-filter:saturate(1.2) blur(6px);padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.06)}
-  .title{display:flex;align-items:center;gap:10px}
-  .logo{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--brand),var(--brand2));display:grid;place-items:center;font-weight:900;color:#001219}
+  .max{max-width:680px;margin:0 auto}
+  .topbar{position:sticky;top:0;z-index:20;padding:12px;backdrop-filter:saturate(1.2) blur(8px);
+    background:linear-gradient(180deg, rgba(12,17,27,.95), rgba(12,17,27,.75));border-bottom:1px solid rgba(255,255,255,.06)}
+  .brand{display:flex;gap:10px;align-items:center}
+  .logo{width:38px;height:38px;border-radius:12px;background:linear-gradient(135deg,var(--brand),var(--brand2));
+    display:grid;place-items:center;font-weight:900;color:#001219}
   .subtitle{font-size:11px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase}
+  .container{padding:14px 14px 84px}
   .panel{background:var(--panel);border:1px solid rgba(255,255,255,.08);border-radius:var(--radius);box-shadow:var(--shadow)}
   .pad{padding:14px}
-  .grid{display:grid;gap:10px}
+  .grid{display:grid;gap:12px}
   .g2{grid-template-columns:1fr 1fr}
   .muted{color:var(--muted)}
-  .btn{appearance:none;border:0;border-radius:12px;padding:13px 14px;font-weight:700;background:#1a2433;color:#e6f2ff}
+  .btn{appearance:none;border:0;border-radius:14px;padding:13px 14px;font-weight:800;background:#1a2433;color:#dff3ff}
   .btn:active{transform:translateY(1px)}
-  .btn-primary{background:linear-gradient(90deg,var(--brand),#209ee2);color:white}
-  .btn-ghost{background:#1a2433;color:#cfe8ff}
+  .btn-primary{background:linear-gradient(90deg,var(--brand),#209ee2);color:#001219}
+  .btn-ghost{background:#0f1520;color:#d0eaff;border:1px solid rgba(255,255,255,.12)}
   .btn-danger{background:#2a1a1d;color:#ffd6d6;border:1px solid rgba(255,90,95,.35)}
-  .row{display:flex;gap:10px;align-items:center}
-  select,textarea,input{
-    width:100%;background:#0f1520;color:#eaf2ff;border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:12px;
-    font:inherit;
+  .field{display:flex;flex-direction:column;gap:6px}
+  input,select,textarea{
+    width:100%;background:#0f1520;color:#eaf2ff;border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:12px;font:inherit
   }
   textarea{min-height:110px;resize:vertical}
-  .stat{display:flex;flex-direction:column;gap:2px;text-align:center;padding:10px;background:#0f1520;border:1px solid rgba(255,255,255,.08);border-radius:12px}
-  .stat .num{font-weight:900;font-size:20px}
-  .result{min-height:160px;white-space:pre-wrap;font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, "JetBrains Mono", monospace;padding:12px;background:#0f1520;border-radius:12px;border:1px solid rgba(255,255,255,.08)}
+  .row{display:flex;gap:10px;align-items:center}
+  .wrap{display:flex;flex-wrap:wrap;gap:8px}
+  .stat{display:flex;gap:8px;align-items:center;background:#0f1520;border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:10px}
+  .stat .num{font-weight:900}
+  .result{min-height:120px;font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, "JetBrains Mono", monospace;
+    padding:12px;background:#0f1520;border-radius:12px;border:1px solid rgba(255,255,255,.08)}
   .tip{font-size:12px;color:var(--muted)}
-  .chip{display:inline-block;background:#112030;color:#bfe9ff;border:1px solid rgba(255,255,255,.08);border-radius:999px;padding:4px 8px;font-size:11px}
-  .list{display:flex;flex-direction:column;gap:8px;max-height:180px;overflow:auto}
+  .chip{display:inline-flex;align-items:center;gap:6px;background:#112030;color:#bfe9ff;border:1px solid rgba(255,255,255,.08);
+    border-radius:999px;padding:5px 10px;font-size:12px}
+  .list{display:flex;flex-direction:column;gap:10px;max-height:220px;overflow:auto}
   .item{padding:10px;background:#0f1520;border:1px solid rgba(255,255,255,.08);border-radius:12px}
   .item .meta{display:flex;justify-content:space-between;gap:8px;color:var(--muted);font-size:11px;margin-top:6px}
+  .divider{height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.12),transparent);margin:8px 0}
   .bottomnav{
-    position:fixed;left:0;right:0;bottom:0;z-index:20;padding:10px 12px;background:rgba(12,17,27,.96);backdrop-filter:blur(8px);
+    position:fixed;left:0;right:0;bottom:0;z-index:30;padding:10px 12px;background:rgba(12,17,27,.96);backdrop-filter:blur(8px);
     border-top:1px solid rgba(255,255,255,.06);display:grid;grid-template-columns:repeat(3,1fr);gap:10px
   }
-  .tabbtn{border-radius:12px;padding:10px;background:#1a2433;color:#cfe8ff;border:1px solid rgba(255,255,255,.06)}
+  .tabbtn{border-radius:12px;padding:10px;background:#0f1520;color:#cfe8ff;border:1px solid rgba(255,255,255,.06)}
   .tabbtn.active{background:linear-gradient(90deg,var(--brand),#1ea8df);color:#001219;font-weight:900}
   .hidden{display:none}
-  .mark{background:#ffe172;color:#1b2436;padding:0 4px;border-radius:6px;font-weight:800}
-  .toast{position:fixed;right:12px;bottom:72px;background:#0f2430;color:#e6f7ff;border:1px solid rgba(255,255,255,.12);padding:10px 12px;border-radius:10px;opacity:0;transform:translateY(10px);transition:.25s}
+  .toast{position:fixed;right:12px;bottom:76px;background:#0e2530;color:#e6f7ff;border:1px solid rgba(255,255,255,.12);
+    padding:10px 12px;border-radius:10px;opacity:0;transform:translateY(10px);transition:.25s;z-index:40}
   .toast.show{opacity:1;transform:translateY(0)}
+  .mark{background:#ffe172;color:#1b2436;padding:0 4px;border-radius:6px;font-weight:900}
+  .pill{border-radius:999px;padding:4px 10px;background:#152034;border:1px solid rgba(255,255,255,.1)}
+  .kbd{border:1px solid rgba(255,255,255,.25);background:#132030;border-radius:8px;padding:1px 6px;font-size:12px}
 </style>
 </head>
 <body>
-  <div class="topbar">
-    <div class="title">
+  <!-- Top -->
+  <header class="topbar">
+    <div class="max brand">
       <div class="logo">N</div>
       <div>
-        <div style="font-weight:900">NEO Mobile Toolkit</div>
-        <div class="subtitle">Address Forge & Local Board</div>
+        <div style="font-weight:900;font-size:17px">NEO Mobile Online</div>
+        <div class="subtitle">Address Forge & Live Firestore Board</div>
       </div>
     </div>
-  </div>
+  </header>
 
-  <div class="container">
+  <main class="container max">
     <!-- TAB: Generator -->
     <section id="tab-gen" class="grid" aria-live="polite">
       <div class="panel pad grid">
-        <div style="font-weight:800;font-size:18px">🔐 ตัวสร้างที่อยู่ลับ</div>
+        <div class="row" style="justify-content:space-between">
+          <div style="font-weight:900;font-size:18px">🔐 ตัวสร้างที่อยู่ลับ (One-Line)</div>
+          <div class="wrap">
+            <span class="pill tip">คีย์ลัด: <span class="kbd">G</span> สุ่ม • <span class="kbd">C</span> คัดลอก</span>
+          </div>
+        </div>
+
         <div class="grid g2">
-          <label>
-            <div class="tip">โปรไฟล์ที่อยู่</div>
-            <select id="addressSelect">
-              <option value="home">บ้านไทยสมุทร</option>
-              <option value="alt1">บ้านปทุม</option>
-            </select>
+          <label class="field">
+            <span class="tip">โปรไฟล์ที่อยู่</span>
+            <select id="addressSelect"></select>
           </label>
-          <label>
-            <div class="tip">ระดับการพราง</div>
+          <label class="field">
+            <span class="tip">ระดับการพราง</span>
             <select id="obfuscationSelect">
               <option value="low">ต่ำ — อ่านง่าย</option>
               <option value="medium" selected>กลาง — สมดุล</option>
@@ -93,413 +112,590 @@
               <option value="extreme">สุดขั้น — เกือบไม่อ่านออก</option>
             </select>
           </label>
-          <label>
-            <div class="tip">จำนวนบรรทัด</div>
-            <select id="linesSelect">
-              <option value="auto" selected>สุ่มอัตโนมัติ</option>
-              <option value="1">1 บรรทัด</option>
-              <option value="2">2 บรรทัด</option>
-              <option value="3">3 บรรทัด</option>
-              <option value="4">4 บรรทัด</option>
-              <option value="5">5 บรรทัด</option>
-            </select>
-          </label>
-          <label>
-            <div class="tip">รูปแบบตัวเลข</div>
+          <label class="field">
+            <span class="tip">รูปแบบตัวเลข</span>
             <select id="digitMode">
               <option value="mixed" selected>ผสม (ไทย/อารบิก)</option>
               <option value="thai">เลขไทยทั้งหมด</option>
               <option value="arabic">เลขอารบิกทั้งหมด</option>
             </select>
           </label>
+          <div class="field">
+            <div class="row" style="justify-content:space-between">
+              <span class="tip">จำนวนช่องว่างคั่น (ไม่ขึ้นบรรทัดใหม่)</span>
+              <label class="tip row" style="gap:6px">
+                <input id="nbspToggle" type="checkbox"> ใช้&nbsp;NBSP
+              </label>
+            </div>
+            <input id="spaceCount" type="range" min="1" max="12" value="6" />
+            <div class="row" style="justify-content:space-between">
+              <span class="chip">ตัวอย่างช่องว่าง: <span id="spaceSample" style="background:#22324a;padding:2px 8px;border-radius:8px">______</span></span>
+              <label class="tip row" style="gap:6px">
+                <input id="randSpace" type="checkbox"> สุ่มจำนวนช่องว่าง
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="wrap">
+          <label class="chip"><input id="fuzzyLabels" type="checkbox" checked> ใช้ฉลากพิมพ์เพี้ยน</label>
+          <label class="chip"><input id="punctToggle" type="checkbox" checked> แทรกสัญลักษณ์สุ่ม</label>
+          <label class="chip"><input id="zwsToggle" type="checkbox"> แทรก ZWSP (บางส่วน)</label>
         </div>
 
         <div class="row" style="gap:8px;flex-wrap:wrap">
-          <button id="generateBtn" class="btn btn-primary" style="flex:1">🎲 สร้าง</button>
+          <button id="generateBtn" class="btn btn-primary" style="flex:1">🎲 สุ่ม</button>
           <button id="copyBtn" class="btn btn-ghost" style="flex:1">📋 คัดลอก</button>
-          <button id="clearBtn" class="btn btn-ghost" style="flex:1">🧹 ล้าง</button>
           <button id="saveBtn" class="btn btn-ghost" style="flex:1">⬇️ บันทึกไฟล์</button>
+          <button id="cleanBtn" class="btn btn-ghost" style="flex:1">🧽 ล้างสัญลักษณ์/ZWSP</button>
         </div>
 
-        <div class="grid g2">
-          <div class="stat"><div class="num" id="generateCount">0</div><div class="tip">ครั้งที่สร้าง</div></div>
-          <div class="stat"><div class="num" id="copyCount">0</div><div class="tip">ครั้งที่คัดลอก</div></div>
+        <div class="row" style="gap:10px">
+          <div class="stat"><span class="muted">สร้าง</span> <span class="num" id="generateCount">0</span></div>
+          <div class="stat"><span class="muted">คัดลอก</span> <span class="num" id="copyCount">0</span></div>
+          <div class="stat"><span class="muted">รูปแบบ</span> <span class="num" id="currentVariation">A1</span></div>
+          <div class="stat"><span class="muted">เวลา</span> <span class="num" id="generationTime">—</span></div>
         </div>
+
+        <div class="divider"></div>
 
         <div>
           <div class="row" style="justify-content:space-between">
-            <div class="chip">รูปแบบ: <b id="currentVariation" style="margin-left:6px">A1</b></div>
-            <div class="tip" id="generationTime"></div>
+            <span style="font-weight:700">ผลลัพธ์ (บรรทัดเดียว)</span>
+            <small class="tip">คัดลอกแล้ววางในแอปได้เลย</small>
           </div>
           <div id="resultDisplay" class="result" style="margin-top:8px"></div>
         </div>
 
         <div>
-          <div style="font-weight:700;margin:6px 0 4px">📚 ประวัติล่าสุด</div>
+          <div class="row" style="justify-content:space-between">
+            <span style="font-weight:700">📚 ประวัติล่าสุด</span>
+            <button id="exportCsv" class="btn btn-ghost" style="padding:8px 10px">📤 ส่งออก CSV</button>
+          </div>
           <div id="historyContainer" class="list"><div class="tip">ยังไม่มีประวัติ</div></div>
         </div>
       </div>
 
       <div class="panel pad">
         <div style="font-weight:700">🧪 ตัวอย่างฉลาก (ปกติ/เพี้ยน)</div>
-        <div id="labelPreview" class="row" style="flex-wrap:wrap;margin-top:8px;gap:6px"></div>
-        <div class="tip" style="margin-top:6px">ระบบจะสุ่มฉลาก และอาจแทรกสัญลักษณ์/ช่องว่างศูนย์ความกว้าง เพื่อทดสอบการกันบอทอ่าน</div>
+        <div id="labelPreview" class="wrap" style="margin-top:8px"></div>
       </div>
     </section>
 
-    <!-- TAB: Board (Local Only) -->
+    <!-- TAB: Board (Firestore) -->
     <section id="tab-board" class="grid hidden">
       <div class="panel pad grid">
-        <div style="font-weight:800;font-size:18px">💬 บอร์ดข้อความ (เก็บในเครื่อง)</div>
-        <label>
-          <div class="tip">หัวข้อ (ไม่บังคับ)</div>
-          <input id="titleInput" type="text" maxlength="120" placeholder="พิมพ์หัวข้อสั้นๆ">
-        </label>
-        <label>
-          <div class="tip">ข้อความ</div>
-          <textarea id="messageInput" maxlength="1000" placeholder="พิมพ์ข้อความที่นี่..."></textarea>
-        </label>
         <div class="row" style="justify-content:space-between">
-          <div class="tip"><span id="charLeft">1000</span> ตัวอักษรที่เหลือ</div>
-          <div class="tip">โหมด: <b>ออฟไลน์/โลคอล</b></div>
+          <div style="font-weight:900;font-size:18px">💬 บอร์ดข้อความออนไลน์</div>
+          <span class="pill tip">Realtime Firestore</span>
         </div>
-        <div class="row">
-          <button id="postBtn" class="btn btn-primary" style="flex:2">โพสต์</button>
-          <button id="clearCompose" class="btn btn-ghost" style="flex:1">ล้าง</button>
+
+        <div class="grid g2">
+          <label class="field">
+            <span class="tip">รหัสบอร์ด (กำหนดเองเพื่อแยกห้อง)</span>
+            <input id="boardIdInput" placeholder="เช่น: my-team-01">
+          </label>
+          <div class="field">
+            <span class="tip">การเชื่อมต่อ</span>
+            <div class="row">
+              <button id="applyBoard" class="btn btn-primary" style="flex:1">เชื่อมต่อ/สลับบอร์ด</button>
+              <button id="shareBoard" class="btn btn-ghost">แชร์ลิงก์</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid">
+          <label class="field">
+            <span class="tip">หัวข้อ (ไม่บังคับ)</span>
+            <input id="titleInput" maxlength="120" placeholder="หัวข้อ">
+          </label>
+          <label class="field">
+            <span class="tip">ข้อความ</span>
+            <textarea id="messageInput" maxlength="1000" placeholder="พิมพ์ข้อความที่นี่..."></textarea>
+          </label>
+          <div class="row" style="justify-content:space-between">
+            <span class="tip"><span id="charLeft">1000</span> ตัวอักษรที่เหลือ</span>
+            <div class="row">
+              <button id="postBtn" class="btn btn-primary">โพสต์</button>
+              <button id="clearCompose" class="btn btn-ghost">ล้าง</button>
+            </div>
+          </div>
         </div>
       </div>
 
       <div class="panel pad grid">
-        <div style="font-weight:700">รายการโพสต์</div>
+        <div class="row" style="justify-content:space-between">
+          <div style="font-weight:700">รายการโพสต์</div>
+          <div class="row">
+            <input id="searchMsg" placeholder="ค้นหา..." style="width:160px">
+            <label class="chip"><input id="onlyMine" type="checkbox"> โพสต์ของฉัน</label>
+          </div>
+        </div>
+        <div id="loadingBoard" class="tip">กำลังเชื่อมต่อ...</div>
         <div id="messages" class="list"></div>
       </div>
     </section>
 
-    <!-- TAB: About/Help -->
-    <section id="tab-help" class="grid hidden">
+    <!-- TAB: Settings -->
+    <section id="tab-settings" class="grid hidden">
       <div class="panel pad grid">
-        <div style="font-weight:800;font-size:18px">ℹ️ วิธีใช้ฉบับย่อ</div>
+        <div style="font-weight:900;font-size:18px">⚙️ โปรไฟล์ที่อยู่ (ปรับแต่งเอง)</div>
+        <div class="tip">เพิ่ม/แก้ไขโปรไฟล์ แล้วใช้ในตัวสร้างที่อยู่ด้านบน</div>
+        <div class="grid g2">
+          <label class="field"><span class="tip">คีย์โปรไฟล์</span><input id="p_key" placeholder="เช่น: home2"></label>
+          <label class="field"><span class="tip">บ้านเลขที่</span><input id="p_house" placeholder="62/37"></label>
+          <label class="field"><span class="tip">ซอย</span><input id="p_soi" placeholder="ลาดกระบัง16"></label>
+          <label class="field"><span class="tip">หมู่บ้าน</span><input id="p_village" placeholder="หมู่บ้าน..."></label>
+          <label class="field"><span class="tip">ถนน</span><input id="p_road" placeholder="ลาดกระบัง"></label>
+          <label class="field"><span class="tip">ตำบล</span><input id="p_subdistrict" placeholder="ราชาเทวะ"></label>
+          <label class="field"><span class="tip">อำเภอ</span><input id="p_district" placeholder="บางพลี"></label>
+          <label class="field"><span class="tip">จังหวัด</span><input id="p_province" placeholder="สมุทรปราการ"></label>
+          <label class="field"><span class="tip">รหัสไปรษณีย์</span><input id="p_postal" placeholder="10540"></label>
+          <label class="field"><span class="tip">เบอร์โทร</span><input id="p_phone" placeholder="0961408164"></label>
+        </div>
+        <div class="row">
+          <button id="addProfile" class="btn btn-primary">เพิ่ม/อัปเดตโปรไฟล์</button>
+          <button id="delProfile" class="btn btn-danger">ลบโปรไฟล์</button>
+        </div>
+        <div class="divider"></div>
+        <div>
+          <div style="font-weight:700">โปรไฟล์ทั้งหมด</div>
+          <div id="profileList" class="list" style="max-height:240px"></div>
+        </div>
+      </div>
+
+      <div class="panel pad">
+        <div style="font-weight:700">ℹ️ หมายเหตุ</div>
         <ul class="tip" style="margin:6px 0 0 18px">
-          <li>แตะ “สร้าง” เพื่อสุ่มที่อยู่/เบอร์แบบพราง</li>
-          <li>กดค้างที่ผลลัพธ์เพื่อเลือก/คัดลอกได้ หรือใช้ปุ่ม “คัดลอก”</li>
-          <li>บอร์ดข้อความเก็บข้อมูลในเครื่อง (ลบ/แก้ไขได้เฉพาะเครื่องนี้)</li>
+          <li>โหมดบอร์ดออนไลน์ต้องเปิดผ่าน HTTPS/โดเมนหรือ localhost</li>
+          <li>คุณสามารถแชร์บอร์ดด้วยลิงก์ ?board=YOUR_ID</li>
+          <li>โค้ดนี้ใช้ Firebase (Anonymous Auth + Firestore)</li>
         </ul>
-        <div class="tip" style="margin-top:8px">* โค้ดนี้ออกแบบให้ใช้งานจากมือถือได้ทันที (ไม่ต้องเซิร์ฟเวอร์, ไม่พึ่งไลบรารี)</div>
       </div>
     </section>
-  </div>
+  </main>
 
   <!-- Bottom Nav -->
   <nav class="bottomnav">
     <button class="tabbtn active" data-tab="gen">🔐 สร้าง</button>
     <button class="tabbtn" data-tab="board">💬 บอร์ด</button>
-    <button class="tabbtn" data-tab="help">ℹ️ ช่วยเหลือ</button>
+    <button class="tabbtn" data-tab="settings">⚙️ ตั้งค่า</button>
   </nav>
 
   <div id="toast" class="toast">—</div>
 
 <script>
-/* ===== Utilities (Mobile-friendly, no deps) ===== */
+/* ====== Helpers ====== */
 const $ = s => document.querySelector(s);
 const $$ = s => Array.from(document.querySelectorAll(s));
 const toast = $('#toast');
-function showToast(msg){ toast.textContent = msg; toast.classList.add('show'); clearTimeout(showToast.t); showToast.t=setTimeout(()=>toast.classList.remove('show'),1500); }
+function showToast(msg){ toast.textContent=msg; toast.classList.add('show'); clearTimeout(showToast.t); showToast.t=setTimeout(()=>toast.classList.remove('show'),1600); }
 function rnd(a){ return a[Math.floor(Math.random()*a.length)] }
-function zws(s){ return s.split('').join('\u200b') }
+function zws(s){ return s.split('').join('\\u200b') }
 function toThaiDigits(str){ return String(str).replace(/[0-9]/g,d=>'๐๑๒๓๔๕๖๗๘๙'[d]) }
 function toArabicDigits(str){ return String(str).replace(/[๐-๙]/g,d=>'0123456789'['๐๑๒๓๔๕๖๗๘๙'.indexOf(d)]) }
+function uid(){ return Math.random().toString(36).slice(2)+Math.random().toString(36).slice(2) }
+function esc(s=''){ const p=document.createElement('p'); p.textContent=s; return p.innerHTML }
 
-/* ===== Tabs (Bottom Nav) ===== */
-const tabs = {gen: $('#tab-gen'), board: $('#tab-board'), help: $('#tab-help')};
+/* ====== Tabs ====== */
+const tabs = {gen: $('#tab-gen'), board: $('#tab-board'), settings: $('#tab-settings')};
 $$('.tabbtn').forEach(btn=>{
   btn.addEventListener('click', ()=>{
     $$('.tabbtn').forEach(b=>b.classList.remove('active'));
     btn.classList.add('active');
-    const t = btn.dataset.tab;
-    Object.entries(tabs).forEach(([k,el])=> el.classList.toggle('hidden', k!==t));
-    window.scrollTo({top:0, behavior:'smooth'});
+    const t=btn.dataset.tab; Object.entries(tabs).forEach(([k,el])=> el.classList.toggle('hidden', k!==t));
+    window.scrollTo({top:0,behavior:'smooth'});
+    localStorage.setItem('neo_tab', t);
   });
 });
+(function(){ const t=localStorage.getItem('neo_tab'); if(t&&tabs[t]) { $(`.tabbtn[data-tab="${t}"]`).click(); } })();
 
-/* ===== Address Generator ===== */
-const ADDRESSES = {
-  home: { houseNumber: "62/37", soi: "ลาดกระบัง16", village: "หมู่บ้านไทยสมุทร2", road: "ลาดกระบัง", subdistrict: "ราชาเทวะ", district: "บางพลี", province: "สมุทรปราการ", postalCode: "10540" },
-  alt1: { houseNumber: "22/4", soi: "ใจเอื้อ 2", village: "", road: "", subdistrict: "บางขะแยง", district: "", province: "ปทุมธานี", postalCode: "12000" }
+/* ====== Address Profiles (default + user) ====== */
+const DEFAULT_PROFILES = {
+  home: { houseNumber:"62/37",soi:"ลาดกระบัง16",village:"หมู่บ้านไทยสมุทร2",road:"ลาดกระบัง",subdistrict:"ราชาเทวะ",district:"บางพลี",province:"สมุทรปราการ",postalCode:"10540", phone:"0961408164" },
+  alt1: { houseNumber:"22/4",soi:"ใจเอื้อ 2",village:"",road:"",subdistrict:"บางขะแยง",district:"",province:"ปทุมธานี",postalCode:"12000", phone:"0946401569" }
 };
-const PHONES = { home: "0961408164", alt1: "0946401569" };
+const PROFILES_KEY = 'neo_profiles_v1';
+function loadProfiles(){
+  try { const u = JSON.parse(localStorage.getItem(PROFILES_KEY)||'{}'); return {...DEFAULT_PROFILES, ...u}; }
+  catch { return {...DEFAULT_PROFILES}; }
+}
+function saveUserProfiles(all){
+  const userOnly = {}; Object.entries(all).forEach(([k,v])=>{ if(!DEFAULT_PROFILES[k]) userOnly[k]=v; });
+  localStorage.setItem(PROFILES_KEY, JSON.stringify(userOnly));
+}
 
+/* ====== Generator Data ====== */
 const Labels = {
-  house: ['บ้านเลขที่','เลขที่','No.','#',''],
-  phone: ['โทรศัพท์','Tel','โทร','เบอร์โทร',''],
-  soi: ['ซอย','ซ.','Soi',''],
-  village: ['หมู่บ้าน','ม.','หมู่',''],
-  road: ['ถนน','ถ.','Rd.',''],
-  subdistrict: ['ตำบล','ต.',''],
-  district: ['อำเภอ','อ.',''],
-  province: ['จังหวัด','จ.',''],
-  postal: ['รหัสไปรษณีย์','รหัส','Zip','']
+  house:['บ้านเลขที่','เลขที่','No.','#',''],
+  phone:['โทรศัพท์','Tel','โทร','เบอร์โทร',''],
+  soi:['ซอย','ซ.','Soi',''],
+  village:['หมู่บ้าน','ม.','หมู่',''],
+  road:['ถนน','ถ.','Rd.',''],
+  subdistrict:['ตำบล','ต.',''],
+  district:['อำเภอ','อ.',''],
+  province:['จังหวัด','จ.',''],
+  postal:['รหัสไปรษณีย์','รหัส','Zip','']
 };
 const FuzzyLabels = {
-  house: ['บ้านเลๅที่','บ้านเลซที่','บ้านเxขที่','บ้าuเลขที่'],
-  phone: ['โทsัพท์','โทรsัsท์','โทpศัพ','โทรsับ'],
-  soi: ['ซoย','ซxย','ซ0ย'],
-  village: ['หมู่บาu','หมู่บ้าu','หมูvบาu'],
-  road: ['ถuน','ถuv','ถvน'],
-  subdistrict: ['ตำบu','ตําบล','ตxบล'],
-  district: ['อำpอ','อำเๅอ','อําเภo'],
-  province: ['จังหว้ด','จัnหวัด','จัJหวัด'],
-  postal: ['รหัสไปsษณีย์','รหัnไปรษณีย์','รหัสไpรษณีย์']
+  house:['บ้านเลๅที่','บ้านเลซที่','บ้านเxขที่','บ้าuเลขที่'],
+  phone:['โทsัพท์','โทรsัsท์','โทpศัพ','โทรsับ'],
+  soi:['ซoย','ซxย','ซ0ย'],
+  village:['หมู่บาu','หมู่บ้าu','หมูvบาu'],
+  road:['ถuน','ถuv','ถvน'],
+  subdistrict:['ตำบu','ตําบล','ตxบล'],
+  district:['อำpอ','อำเๅอ','อําเภo'],
+  province:['จังหว้ด','จัnหวัด','จัJหวัด'],
+  postal:['รหัสไปsษณีย์','รหัnไปรษณีย์','รหัสไpรษณีย์']
 };
-const Punct = ['.', ',', '/', '-', '_'];
-const Seps  = [', ',' ',' • ',' — '];
+const Punct=['.',',','/','-','_'];
 
-const addressSelect = $('#addressSelect');
-const obfuscationSelect = $('#obfuscationSelect');
-const linesSelect = $('#linesSelect');
-const digitMode = $('#digitMode');
-const resultDisplay = $('#resultDisplay');
-const generationTime = $('#generationTime');
-const labelPreview = $('#labelPreview');
-const generateCountEl = $('#generateCount');
-const copyCountEl = $('#copyCount');
-const currentVariationEl = $('#currentVariation');
-const historyContainer = $('#historyContainer');
+/* ====== Generator UI refs ====== */
+const addressSelect=$('#addressSelect'), obfuscationSelect=$('#obfuscationSelect'), digitMode=$('#digitMode');
+const spaceCount=$('#spaceCount'), spaceSample=$('#spaceSample'), randSpace=$('#randSpace'), nbspToggle=$('#nbspToggle');
+const fuzzyLabels=$('#fuzzyLabels'), punctToggle=$('#punctToggle'), zwsToggle=$('#zwsToggle');
+const resultDisplay=$('#resultDisplay'), generateCountEl=$('#generateCount'), copyCountEl=$('#copyCount'), currentVariationEl=$('#currentVariation'), generationTime=$('#generationTime');
+const historyContainer=$('#historyContainer'), labelPreview=$('#labelPreview');
 
-const stats = { generateCount: 0, copyCount: 0 };
-const history = [];
+let PROFILES = loadProfiles();
+function refreshProfileSelect(){
+  addressSelect.innerHTML = Object.keys(PROFILES).map(k=>`<option value="${k}">${k}</option>`).join('');
+}
+function refreshProfileList(){
+  const box=$('#profileList'); const keys=Object.keys(PROFILES);
+  if(!keys.length){ box.innerHTML='<div class="tip">ไม่มีโปรไฟล์</div>'; return; }
+  box.innerHTML = keys.map(k=>{
+    const p=PROFILES[k];
+    return `<div class="item">
+      <b>${k}</b>
+      <div class="meta"><span>${esc([p.houseNumber,p.soi,p.village,p.road,p.subdistrict,p.district,p.province,p.postalCode].filter(Boolean).join(' • '))}</span></div>
+    </div>`;
+  }).join('');
+}
+refreshProfileSelect(); refreshProfileList();
 
-function injectPunc(str, level){
-  const chance = {low:0, medium:.05, high:.15, extreme:.3}[level] || 0;
-  if (!chance) return str;
-  let out = '';
-  for (const ch of String(str)) {
-    out += ch;
-    if (Math.random()<chance && ch!==' ' && !Punct.includes(ch)) out += rnd(Punct);
-  }
-  return out;
-}
-function formatNumber(num){
-  if (!num) return '';
-  const s = String(num);
-  return rnd([s, s.replace('/', ' / '), s.replace('/', '-'), `No.${s}`, s.split('').join(' ')]);
-}
-function formatPhone(p){
-  if (!p) return '';
-  return rnd([
-    p,
-    p.replace(/(\d{3})(\d{3})(\d{4})/,'$1-$2-$3'),
-    p.replace(/(\d{3})(\d{3})(\d{4})/,'$1 $2 $3'),
-    '+66 '+p.slice(1)
-  ]);
-}
-function variationCode(){
-  const A='ABCDEFGHIJKLMNOPQRSTUVWXYZ', D='0123456789';
-  return A[Math.floor(Math.random()*A.length)]+D[Math.floor(Math.random()*D.length)];
-}
-function applyDigitMode(s){
-  if (digitMode.value==='thai') return toThaiDigits(s);
-  if (digitMode.value==='arabic') return toArabicDigits(s);
-  return Math.random()<.5? toThaiDigits(s) : String(s);
-}
+/* ====== Label Preview ====== */
 function renderLabelPreview(){
-  const keys = ['house','phone','soi','village','road','subdistrict','district','province','postal'];
-  labelPreview.innerHTML = keys.map(k=>{
-    const normal = rnd(Labels[k])||'—';
-    const fuzzy  = FuzzyLabels[k]? rnd(FuzzyLabels[k]) : '';
+  const parts=['house','phone','soi','village','road','subdistrict','district','province','postal'];
+  labelPreview.innerHTML = parts.map(k=>{
+    const normal=rnd(Labels[k])||'—';
+    const fuzzy = FuzzyLabels[k]? rnd(FuzzyLabels[k]) : '';
     return `<span class="chip">${normal}</span><span class="chip" style="opacity:.7">${fuzzy}</span>`;
   }).join(' ');
 }
+renderLabelPreview();
 
-function generateAddress(){
-  const t0 = performance.now();
-  const level = obfuscationSelect.value;
-  const addr = ADDRESSES[addressSelect.value];
-  const phone = PHONES[addressSelect.value];
+/* ====== Spacing Sample ====== */
+function spacer(n,useNbsp){ return (useNbsp? '\\u00A0' : ' ').repeat(n) }
+function updateSpaceSample(){
+  const n=parseInt(spaceCount.value,10)||6;
+  spaceSample.textContent = '_'.repeat(n);
+}
+spaceCount.addEventListener('input', updateSpaceSample); updateSpaceSample();
 
-  const comps = [
-    {key:'house', value:`<span class="mark">${formatNumber(applyDigitMode(addr.houseNumber))}</span>`, label:Labels.house, required:!!addr.houseNumber},
-    {key:'phone', value:applyDigitMode(formatPhone(phone)), label:Labels.phone, required:!!phone},
-    {key:'soi', value:addr.soi, label:Labels.soi},
-    {key:'village', value:addr.village, label:Labels.village},
-    {key:'road', value:addr.road, label:Labels.road},
-    {key:'subdistrict', value:addr.subdistrict, label:Labels.subdistrict},
-    {key:'district', value:addr.district, label:Labels.district},
-    {key:'province', value:addr.province, label:Labels.province},
-    {key:'postal', value:applyDigitMode(addr.postalCode), label:Labels.postal}
-  ].filter(c=>c.value && String(c.value).replace(/<[^>]*>/g,'').trim()!=='');
+/* ====== Generator ====== */
+const stats={ generateCount:0, copyCount:0 };
+const history=[];
 
-  const req = comps.filter(c=>c.required);
-  const opt = comps.filter(c=>!c.required);
-  const nOpt = Math.max(2, Math.min(opt.length, Math.floor(Math.random()*(opt.length-1))+2));
-  const selected = [...req, ...opt.sort(()=>0.5-Math.random()).slice(0,nOpt)].sort(()=>0.5-Math.random());
+function rndChance(level){
+  return {low:0, medium:.05, high:.15, extreme:.3}[level] || 0;
+}
+function injectPunc(str,level,enabled){
+  if(!enabled) return str;
+  const chance=rndChance(level); if(!chance) return str;
+  let out=''; for(const ch of String(str)){ out+=ch; if(Math.random()<chance && ch!==' ' && !Punct.includes(ch)) out+=rnd(Punct); }
+  return out;
+}
+function formatNumber(num){
+  if(!num) return ''; const s=String(num);
+  return rnd([s, s.replace('/',' / '), s.replace('/','-'), `No.${s}`, s.split('').join(' ')]);
+}
+function formatPhone(p){
+  if(!p) return '';
+  return rnd([
+    p,
+    p.replace(/(\\d{3})(\\d{3})(\\d{4})/,'$1-$2-$3'),
+    p.replace(/(\\d{3})(\\d{3})(\\d{4})/,'$1 $2 $3'),
+    '+66 '+p.slice(1)
+  ]);
+}
+function variationCode(){ const A='ABCDEFGHIJKLMNOPQRSTUVWXYZ', D='0123456789'; return A[Math.floor(Math.random()*A.length)]+D[Math.floor(Math.random()*D.length)] }
+function applyDigitMode(s){
+  const v=digitMode.value; if(v==='thai') return toThaiDigits(s);
+  if(v==='arabic') return toArabicDigits(s);
+  return Math.random()<.5 ? toThaiDigits(s) : String(s);
+}
 
-  const parts = selected.map(comp=>{
-    let label = rnd(comp.label);
-    if (Math.random()<.4 && FuzzyLabels[comp.key]?.length) label = rnd(FuzzyLabels[comp.key]);
-    const showLabel = label && (comp.required || Math.random()>.3);
-    const value = comp.key==='house' ? comp.value : injectPunc(comp.value, level);
-    let part = showLabel ? `${label} ${value}` : value;
+function generateOneLine(){
+  const t0=performance.now();
+  const key=addressSelect.value; const p=PROFILES[key]; const level=obfuscationSelect.value;
+  const parts = [];
 
-    // zero-width obfuscation ยกเว้นส่วนที่มี mark
-    if (comp.key!=='house') {
-      if (level==='extreme' && Math.random()<.5) return zws(part);
-      if (level==='high' && Math.random()<.3) return zws(part);
-    }
-    return part.trim();
-  }).filter(Boolean);
+  const house = `<span class="mark">${formatNumber(applyDigitMode(p.houseNumber||''))}</span>`;
+  if(p.houseNumber) parts.push(randLabel('house',true)+house);
+  if(p.phone) parts.push(randLabel('phone')+applyDigitMode(formatPhone(p.phone)));
+  if(p.soi) parts.push(randLabel('soi')+p.soi);
+  if(p.village) parts.push(randLabel('village')+p.village);
+  if(p.road) parts.push(randLabel('road')+p.road);
+  if(p.subdistrict) parts.push(randLabel('subdistrict')+p.subdistrict);
+  if(p.district) parts.push(randLabel('district')+p.district);
+  if(p.province) parts.push(randLabel('province')+p.province);
+  if(p.postalCode) parts.push(randLabel('postal')+applyDigitMode(p.postalCode));
 
-  let lines = linesSelect.value==='auto' ? Math.floor(Math.random()*4)+1 : parseInt(linesSelect.value,10);
-  if (lines>parts.length) lines = parts.length;
-  let out;
-  if (lines<=1){
-    out = parts.join(rnd(Seps));
-  } else {
-    const buckets = Array.from({length:lines},()=>[]);
-    parts.forEach((p,i)=>buckets[i%lines].push(p));
-    out = buckets.map(b=>b.join(' ')).join('\n');
-  }
+  // punctuation + zws (avoid affecting .mark segment)
+  const processed = parts.map(x=>{
+    let s = injectPunc(x, level, punctToggle.checked);
+    if(zwsToggle.checked && level!=='low' && Math.random()<.35) s = zws(s);
+    return s;
+  });
 
-  stats.generateCount++;
-  generateCountEl.textContent = stats.generateCount;
-  const vv = variationCode();
-  currentVariationEl.textContent = vv;
-  resultDisplay.innerHTML = out.replace(/\n/g,'<br>');
-  generationTime.textContent = `Generated in ${Math.max(1,Math.round(performance.now()-t0))}ms`;
+  // single-line joiner: multiple spaces (no newline)
+  const useNbsp = nbspToggle.checked;
+  const base = parseInt(spaceCount.value,10)||6;
+  const out = processed.join( processed.map((_,i)=> i<processed.length-1
+    ? spacer(randSpace.checked ? (2+Math.floor(Math.random()*base)) : base, useNbsp)
+    : ''
+  ).join('') );
 
-  history.unshift({id:Date.now(), v:vv, text: out, at: new Date().toLocaleTimeString('th-TH')});
-  if (history.length>6) history.pop();
+  stats.generateCount++; generateCountEl.textContent=stats.generateCount;
+  const v=variationCode(); currentVariationEl.textContent=v;
+  resultDisplay.innerHTML = out; // keep markup (.mark)
+  generationTime.textContent = `${Math.max(1,Math.round(performance.now()-t0))}ms`;
+
+  history.unshift({ id:Date.now(), v, text: out.replace(/<[^>]*>/g,''), at: new Date().toLocaleTimeString('th-TH') });
+  if(history.length>8) history.pop();
   renderHistory();
 }
+function randLabel(type, required=false){
+  let label = rnd(Labels[type]) || '';
+  if(fuzzyLabels.checked && Math.random()<.45 && FuzzyLabels[type]?.length) label = rnd(FuzzyLabels[type]);
+  const show = label && (required || Math.random()>.3);
+  return show ? label+' ' : '';
+}
 function renderHistory(){
-  if (!history.length){ historyContainer.innerHTML = '<div class="tip">ยังไม่มีประวัติ</div>'; return; }
+  if(!history.length){ historyContainer.innerHTML='<div class="tip">ยังไม่มีประวัติ</div>'; return; }
   historyContainer.innerHTML = history.map(h=>`
     <button class="item" data-hid="${h.id}">
-      <div style="display:flex;justify-content:space-between;gap:8px">
-        <div class="chip">#${h.v}</div>
-        <div class="tip">${h.at}</div>
+      <div class="row" style="justify-content:space-between">
+        <span class="chip">#${h.v}</span>
+        <span class="tip">${h.at}</span>
       </div>
-      <div class="tip" style="margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${h.text.replace(/\n/g,'  ')}</div>
+      <div class="tip" style="margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(h.text)}</div>
     </button>
   `).join('');
   $$('#historyContainer .item').forEach(el=>{
     el.addEventListener('click', ()=>{
-      const id = +el.dataset.hid;
-      const item = history.find(x=>x.id===id);
-      if (item){ resultDisplay.innerHTML = item.text.replace(/\n/g,'<br>'); showToast(`โหลดจาก #${item.v}`); }
+      const id=+el.dataset.hid; const item=history.find(x=>x.id===id);
+      if(item){ resultDisplay.textContent=item.text; showToast(`โหลดจาก #${item.v}`); }
     });
   });
 }
-
-/* ===== Actions ===== */
-$('#generateBtn').addEventListener('click', generateAddress);
+function cleanOutput(){
+  const txt = (resultDisplay.textContent||'')
+    .replace(/\u200b/g,'')                         // ZWSP
+    .replace(/[.,/_-](?=\s)/g,'')                  // trailing punct before space
+    .replace(/\s{2,}/g,' ');                       // collapse to single (ผู้ใช้เลือก spaces ใหม่เอง)
+  resultDisplay.textContent = txt;
+  showToast('ล้างสัญลักษณ์/ZWSP แล้ว');
+}
+function exportCSV(){
+  if(!history.length) return showToast('ยังไม่มีประวัติ');
+  const rows = [['variation','time','text'], ...history.map(h=>[h.v,h.at,h.text.replace(/"/g,'""')])];
+  const csv = rows.map(r=>r.map(c=>`"${String(c)}"`).join(',')).join('\n');
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='addresses.csv'; a.click(); URL.revokeObjectURL(a.href);
+}
+$('#generateBtn').addEventListener('click', generateOneLine);
 $('#copyBtn').addEventListener('click', ()=>{
-  const text = resultDisplay.textContent||'';
-  if (!text.trim()) return showToast('ไม่มีข้อมูลให้คัดลอก');
-  navigator.clipboard.writeText(text).then(()=>{ stats.copyCount++; copyCountEl.textContent = stats.copyCount; showToast('คัดลอกแล้ว ✅'); });
-});
-$('#clearBtn').addEventListener('click', ()=>{
-  stats.generateCount=0;stats.copyCount=0;generateCountEl.textContent='0';copyCountEl.textContent='0';
-  currentVariationEl.textContent='—';generationTime.textContent='';resultDisplay.textContent='';history.length=0;renderHistory(); showToast('ล้างแล้ว');
+  const text = resultDisplay.textContent||''; if(!text.trim()) return showToast('ไม่มีข้อมูลให้คัดลอก');
+  navigator.clipboard.writeText(text).then(()=>{ stats.copyCount++; copyCountEl.textContent=stats.copyCount; showToast('คัดลอกแล้ว ✅'); });
 });
 $('#saveBtn').addEventListener('click', ()=>{
-  const text = resultDisplay.textContent||'';
-  if (!text.trim()) return showToast('ไม่มีข้อมูลให้บันทึก');
-  const blob = new Blob([text], {type:'text/plain;charset=utf-8'});
-  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `address-${Date.now()}.txt`; a.click(); URL.revokeObjectURL(a.href);
-  showToast('บันทึกไฟล์แล้ว ⬇️');
+  const text=resultDisplay.textContent||''; if(!text.trim()) return showToast('ไม่มีข้อมูลให้บันทึก');
+  const blob=new Blob([text],{type:'text/plain;charset=utf-8'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`address-${Date.now()}.txt`; a.click(); URL.revokeObjectURL(a.href);
 });
-[addressSelect, obfuscationSelect, linesSelect, digitMode].forEach(el=> el.addEventListener('change', ()=>{ localStorage.setItem('neo_ctrl', JSON.stringify({a:addressSelect.value,o:obfuscationSelect.value,l:linesSelect.value,d:digitMode.value})); renderLabelPreview(); }));
+$('#cleanBtn').addEventListener('click', cleanOutput);
+$('#exportCsv').addEventListener('click', exportCSV);
+[addressSelect,obfuscationSelect,digitMode,spaceCount,randSpace,nbspToggle,fuzzyLabels,punctToggle,zwsToggle]
+  .forEach(el=> el.addEventListener('change', ()=>{ localStorage.setItem('neo_ctrl', JSON.stringify({
+    a:addressSelect.value,o:obfuscationSelect.value,d:digitMode.value,s:spaceCount.value,r:randSpace.checked,nb:nbspToggle.checked,fz:fuzzyLabels.checked,pc:punctToggle.checked,zw:zwsToggle.checked
+  })); }));
 
-/* Restore controls */
-try{
+/* restore ctrl */
+(function(){
   const c = JSON.parse(localStorage.getItem('neo_ctrl')||'{}');
-  if(c.a) addressSelect.value=c.a;
+  if(c.a && PROFILES[c.a]) addressSelect.value=c.a;
   if(c.o) obfuscationSelect.value=c.o;
-  if(c.l) linesSelect.value=c.l;
   if(c.d) digitMode.value=c.d;
-}catch{}
+  if(c.s) spaceCount.value=c.s;
+  if(typeof c.r==='boolean') randSpace.checked=c.r;
+  if(typeof c.nb==='boolean') nbspToggle.checked=c.nb;
+  if(typeof c.fz==='boolean') fuzzyLabels.checked=c.fz;
+  if(typeof c.pc==='boolean') punctToggle.checked=c.pc;
+  if(typeof c.zw==='boolean') zwsToggle.checked=c.zw;
+  updateSpaceSample();
+})();
 
-/* Label preview + first generate */
+/* First run */
+refreshProfileSelect();
 renderLabelPreview();
-generateAddress();
+generateOneLine();
 
-/* ===== Local Board (no internet, per-device) ===== */
-const BOARD_KEY = 'neo_board_messages_v1';
-const DEVICE_ID_KEY = 'neo_device_id';
-function uid(){ return Math.random().toString(36).slice(2)+Math.random().toString(36).slice(2); }
-let DEVICE = localStorage.getItem(DEVICE_ID_KEY);
-if(!DEVICE){ DEVICE = uid(); localStorage.setItem(DEVICE_ID_KEY, DEVICE); }
-
-const titleInput = $('#titleInput');
-const messageInput = $('#messageInput');
-const charLeft = $('#charLeft');
-const messagesEl = $('#messages');
-
-messageInput.addEventListener('input', ()=>{ charLeft.textContent = String(1000 - messageInput.value.length); });
-
-$('#clearCompose').addEventListener('click', ()=>{ titleInput.value=''; messageInput.value=''; charLeft.textContent='1000'; });
-$('#postBtn').addEventListener('click', ()=>{
-  const text = (messageInput.value||'').trim(); if(!text) return showToast('พิมพ์ข้อความก่อน');
-  const title = (titleInput.value||'').trim().slice(0,120);
-  const arr = getMsgs();
-  arr.unshift({ id:Date.now()+':'+uid(), title, text: text.slice(0,1000), ts: Date.now(), author: DEVICE });
-  saveMsgs(arr);
-  titleInput.value=''; messageInput.value=''; charLeft.textContent='1000';
-  renderMsgs();
-  showToast('โพสต์แล้ว');
+/* Keyboard shortcuts */
+document.addEventListener('keydown',(e)=>{
+  if(['INPUT','TEXTAREA'].includes(e.target.tagName)) return;
+  if(e.key.toLowerCase()==='g') generateOneLine();
+  if(e.key.toLowerCase()==='c'){ const t=resultDisplay.textContent||''; if(!t.trim()) return; navigator.clipboard.writeText(t).then(()=>{ stats.copyCount++; copyCountEl.textContent=stats.copyCount; showToast('คัดลอกแล้ว ✅'); }); }
 });
 
-function getMsgs(){ try{ return JSON.parse(localStorage.getItem(BOARD_KEY)||'[]'); }catch{return []} }
-function saveMsgs(arr){ localStorage.setItem(BOARD_KEY, JSON.stringify(arr)); }
-function delMsg(id){
-  const arr = getMsgs().filter(m=>m.id!==id);
-  saveMsgs(arr); renderMsgs(); showToast('ลบแล้ว');
+/* ====== Settings: add/del profile ====== */
+$('#addProfile').addEventListener('click', ()=>{
+  const k=$('#p_key').value.trim(); if(!k) return showToast('ใส่คีย์โปรไฟล์ก่อน');
+  const p={
+    houseNumber:$('#p_house').value.trim(),
+    soi:$('#p_soi').value.trim(),
+    village:$('#p_village').value.trim(),
+    road:$('#p_road').value.trim(),
+    subdistrict:$('#p_subdistrict').value.trim(),
+    district:$('#p_district').value.trim(),
+    province:$('#p_province').value.trim(),
+    postalCode:$('#p_postal').value.trim(),
+    phone:$('#p_phone').value.trim()
+  };
+  PROFILES[k]=p; saveUserProfiles(PROFILES); refreshProfileSelect(); refreshProfileList(); showToast('บันทึกโปรไฟล์แล้ว');
+});
+$('#delProfile').addEventListener('click', ()=>{
+  const k=$('#p_key').value.trim(); if(!k) return showToast('ใส่คีย์โปรไฟล์ที่จะลบ');
+  if(DEFAULT_PROFILES[k]) return showToast('โปรไฟล์เริ่มต้นลบไม่ได้');
+  if(PROFILES[k]){ delete PROFILES[k]; saveUserProfiles(PROFILES); refreshProfileSelect(); refreshProfileList(); showToast('ลบโปรไฟล์แล้ว'); }
+});
+
+/* ====== Firestore Board (Online) ====== */
+const firebaseConfig = {
+  apiKey: "AIzaSyAbD0PkshU9iNghvi-FCsV74PeR4aWzyQo",
+  authDomain: "sent-9c549.firebaseapp.com",
+  projectId: "sent-9c549",
+  storageBucket: "sent-9c549.firebasestorage.app",
+  messagingSenderId: "436570838998",
+  appId: "1:436570838998:web:ec79c0496464ceabe33677"
+};
+let app, db, auth, me=null, unsub = null;
+
+function initFirebase(){
+  try{
+    app = firebase.initializeApp(firebaseConfig);
+    auth = firebase.auth();
+    db = firebase.firestore();
+    auth.onAuthStateChanged(async (u)=>{
+      if(!u){ await auth.signInAnonymously(); return; }
+      me = u; $('#loadingBoard').textContent = 'เชื่อมต่อแล้ว';
+      // auto-connect board by URL ?board=
+      const urlBoard = new URLSearchParams(location.search).get('board');
+      if(urlBoard){ $('#boardIdInput').value = urlBoard; connectBoard(); }
+      else {
+        // restore last
+        const last = localStorage.getItem('neo_board_id') || 'global-public';
+        $('#boardIdInput').value = last; connectBoard();
+      }
+    });
+  }catch(e){ console.error(e); $('#loadingBoard').textContent='เชื่อมต่อไม่ได้'; }
 }
+document.addEventListener('DOMContentLoaded', initFirebase);
+
+/* Board UI refs */
+const boardIdInput=$('#boardIdInput'), applyBoard=$('#applyBoard'), shareBoard=$('#shareBoard');
+const titleInput=$('#titleInput'), messageInput=$('#messageInput'), charLeft=$('#charLeft'), postBtn=$('#postBtn'), clearCompose=$('#clearCompose');
+const messagesEl=$('#messages'), loadingBoard=$('#loadingBoard'), searchMsg=$('#searchMsg'), onlyMine=$('#onlyMine');
+
+messageInput.addEventListener('input', ()=>{ charLeft.textContent=String(1000 - messageInput.value.length); });
+clearCompose.addEventListener('click', ()=>{ titleInput.value=''; messageInput.value=''; charLeft.textContent='1000'; });
+applyBoard.addEventListener('click', connectBoard);
+shareBoard.addEventListener('click', ()=>{
+  const bid=(boardIdInput.value||'').trim()||'global-public';
+  const url = `${location.origin}${location.pathname}?board=${encodeURIComponent(bid)}`;
+  if(navigator.share){ navigator.share({title:'เข้าร่วมบอร์ด', text:`Board: ${bid}`, url}); }
+  else { navigator.clipboard.writeText(url).then(()=>showToast('คัดลอกลิงก์แล้ว')); }
+});
+
+postBtn.addEventListener('click', async ()=>{
+  if(!db || !me) return showToast('ยังไม่เชื่อมต่อ');
+  const text=(messageInput.value||'').trim(); if(!text) return showToast('พิมพ์ข้อความก่อน');
+  const title=(titleInput.value||'').trim().slice(0,120);
+  const bid=(boardIdInput.value||'').trim()||'global-public';
+  try{
+    await db.collection(`/boards/${bid}/messages`).add({
+      text: text.slice(0,1000), title, timestamp: firebase.firestore.FieldValue.serverTimestamp(), authorId: me.uid
+    });
+    titleInput.value=''; messageInput.value=''; charLeft.textContent='1000';
+  }catch(e){ console.error(e); showToast('โพสต์ล้มเหลว'); }
+});
+
+searchMsg.addEventListener('input', renderMsgs);
+onlyMine.addEventListener('change', renderMsgs);
+
+function connectBoard(){
+  if(!db) return;
+  const bid=(boardIdInput.value||'').trim()||'global-public';
+  localStorage.setItem('neo_board_id', bid);
+  $('#loadingBoard').textContent='กำลังโหลด...';
+  if(unsub) unsub();
+  unsub = db.collection(`/boards/${bid}/messages`).orderBy('timestamp','desc').onSnapshot(snap=>{
+    $('#loadingBoard').textContent='';
+    window._msgs = []; snap.forEach(d => window._msgs.push({ id:d.id, ...d.data() }));
+    renderMsgs();
+  }, err=>{ console.error(err); $('#loadingBoard').textContent='โหลดไม่ได้'; });
+}
+
 function renderMsgs(){
-  const arr = getMsgs();
+  const q = (searchMsg.value||'').toLowerCase();
+  const mine = onlyMine.checked ? me?.uid : null;
+  const arr = (window._msgs||[])
+    .filter(m => (!mine || m.authorId===mine))
+    .filter(m => !q || (m.text||'').toLowerCase().includes(q) || (m.title||'').toLowerCase().includes(q));
   if(!arr.length){ messagesEl.innerHTML = '<div class="tip">ยังไม่มีข้อความ</div>'; return; }
   messagesEl.innerHTML = arr.map(m=>{
-    const mine = m.author===DEVICE;
-    return `
-      <div class="item">
-        ${m.title? `<div style="font-weight:700">${escape(m.title)}</div>`:''}
-        <div style="white-space:pre-wrap;margin-top:4px">${escape(m.text)}</div>
-        <div class="meta">
-          <div>${new Date(m.ts).toLocaleString('th-TH')}</div>
-          <div class="row" style="gap:6px">
-            <button class="btn btn-ghost" data-copy="${m.id}" style="padding:6px 10px;font-size:12px">คัดลอก</button>
-            ${mine? `<button class="btn btn-danger" data-del="${m.id}" style="padding:6px 10px;font-size:12px">ลบ</button>`:''}
-          </div>
+    const isMine = m.authorId && me && m.authorId===me.uid;
+    const dateStr = m.timestamp?.toDate ? m.timestamp.toDate().toLocaleString('th-TH') : 'กำลังส่ง...';
+    return `<div class="item">
+      ${m.title? `<div style="font-weight:700">${esc(m.title)}</div>`:''}
+      <div style="white-space:pre-wrap;margin-top:4px">${esc(m.text)}</div>
+      <div class="meta">
+        <div>${esc(dateStr)}</div>
+        <div class="row">
+          <button class="btn btn-ghost" data-copy="${m.id}" style="padding:6px 10px;font-size:12px">คัดลอก</button>
+          ${isMine ? `<button class="btn btn-danger" data-del="${m.id}" style="padding:6px 10px;font-size:12px">ลบ</button>`:''}
         </div>
       </div>
-    `;
+    </div>`;
   }).join('');
-  // bind events
+  // bind
   $$('#messages [data-copy]').forEach(b=>{
     b.addEventListener('click', ()=>{
-      const id = b.dataset.copy; const m = getMsgs().find(x=>x.id===id);
-      if (!m) return;
-      navigator.clipboard.writeText(m.text).then(()=> showToast('คัดลอกข้อความแล้ว'));
+      const id=b.dataset.copy; const m=(window._msgs||[]).find(x=>x.id===id); if(!m) return;
+      navigator.clipboard.writeText(m.text||'').then(()=> showToast('คัดลอกข้อความแล้ว'));
     });
   });
   $$('#messages [data-del]').forEach(b=>{
-    b.addEventListener('click', ()=>{
-      const id = b.dataset.del; if(confirm('ลบโพสต์นี้หรือไม่?')) delMsg(id);
+    b.addEventListener('click', async ()=>{
+      const id=b.dataset.del; const bid=(boardIdInput.value||'').trim()||'global-public';
+      if(confirm('ลบโพสต์นี้หรือไม่?')){
+        try{ await db.doc(`/boards/${bid}/messages/${id}`).delete(); }
+        catch(e){ console.error(e); showToast('ลบไม่สำเร็จ'); }
+      }
     });
   });
 }
-function escape(s=''){ const p=document.createElement('p'); p.textContent=s; return p.innerHTML; }
-renderMsgs();
 
-/* ===== Mobile niceties ===== */
-document.addEventListener('keydown', (e)=>{
-  if (['INPUT','TEXTAREA'].includes(e.target.tagName)) return;
-  if (e.key.toLowerCase()==='g') generateAddress();
-  if (e.key.toLowerCase()==='c') {
-    const t = resultDisplay.textContent||''; if(!t.trim()) return;
-    navigator.clipboard.writeText(t).then(()=>{ stats.copyCount++; copyCountEl.textContent = stats.copyCount; showToast('คัดลอกแล้ว ✅'); });
-  }
-});
+/* ====== Persist last controls and profiles to UI ====== */
+(function initProfilesToSelect(){
+  refreshProfileSelect();
+  // if previously selected profile no longer exists, fallback to first
+  const c = JSON.parse(localStorage.getItem('neo_ctrl')||'{}');
+  if(c.a && PROFILES[c.a]) addressSelect.value=c.a;
+  else addressSelect.value = Object.keys(PROFILES)[0];
+})();
+
+/* ====== Initial space sample + first render already called above ====== */
 </script>
 </body>
 </html>
